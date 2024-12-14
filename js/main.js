@@ -1,62 +1,60 @@
-// Initialisation de la scène, de la caméra et du renderer
+// Scene, camera, and renderer setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+
+// Set background color to match the gradient
+renderer.setClearColor(0x000000); // Black background for consistency
 document.getElementById('container').appendChild(renderer.domElement);
 
-// Ajout d'une lumière pour éclairer le logo
-const light = new THREE.AmbientLight(0x404040, 1); // lumière douce
+// Ambient light for illumination
+const light = new THREE.AmbientLight(0x808080, 1); // Soft light for a neutral tone
 scene.add(light);
 
-// Définition d'un ShaderMaterial pour appliquer un dégradé de gris
-const vertexShader = `
-    varying float vGray;
-    void main() {
-        vGray = (position.y + 1.0) / 2.0; // Calcul du dégradé basé sur la position Y
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-`;
-
-const fragmentShader = `
-    varying float vGray;
-    void main() {
-        gl_FragColor = vec4(vec3(vGray), 1.0); // Application du dégradé de gris
-    }
-`;
-
-// Création du matériau avec le dégradé de gris
-const material = new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
-    side: THREE.FrontSide
+// Gradient material for the lines
+const material = new THREE.LineBasicMaterial({
+    vertexColors: true, // Enable vertex colors for gradient effects
 });
 
-// Définition des points pour dessiner un "N" (avec la ligne du bas)
-const points = [];
-points.push(new THREE.Vector3(-1, -1, 0)); // Bas gauche
-points.push(new THREE.Vector3(-1, 1, 0)); // Haut gauche
-points.push(new THREE.Vector3(1, -1, 0)); // Bas droite
-points.push(new THREE.Vector3(1, 1, 0)); // Haut droite
-points.push(new THREE.Vector3(0, 0, 0)); // Centre du "N" (la barre oblique)
-points.push(new THREE.Vector3(-1, -1, 0)); // Retour à la base gauche
+// Points
+const points = [
+    new THREE.Vector3(-0.4, -0.2, 0), // Bottom left
+    new THREE.Vector3(-0.4, 0.2, 0),  // Top left
+    new THREE.Vector3(0, 0, 0),       // Middle
+    new THREE.Vector3(0.4, 0.2, 0),   // Top right
+    new THREE.Vector3(0.4, -0.2, 0),  // Bottom right
+    new THREE.Vector3(0, 0, 0),       // Middle
+    new THREE.Vector3(-0.4, -0.2, 0), // Close the shape
+];
 
-// Création de la géométrie du "N" (ligne filaire)
+// Geometry and colors
 const geometry = new THREE.BufferGeometry().setFromPoints(points);
-const line = new THREE.LineLoop(geometry, material);
+
+// Define colors for a marked gradient
+const colors = new Float32Array([
+    1.0, 1.0, 1.0,
+    0.7, 0.7, 0.7,
+    0.5, 0.5, 0.5,
+    0.7, 0.7, 0.7,
+    0.3, 0.3, 0.3,
+    0.5, 0.5, 0.5,
+    1.0, 1.0, 1.0,
+]);
+geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+// Line creation
+const line = new THREE.Line(geometry, material);
 scene.add(line);
 
-// Centrer le "N"
-line.position.set(0, 0, 0);
+// Position the camera
+camera.position.z = 4;
 
-// Positionner la caméra
-camera.position.z = 5;
-
-// Animation du logo (rotation autour de l'axe Y uniquement)
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
 
-    // Rotation du "N" autour de l'axe Y (horizontal)
+    // Rotate
     line.rotation.y += 0.01;
 
     renderer.render(scene, camera);
@@ -64,7 +62,7 @@ function animate() {
 
 animate();
 
-// Adapter la taille du renderer lors du redimensionnement de la fenêtre
+// Handle window resize
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
